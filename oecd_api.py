@@ -114,7 +114,7 @@ class OECDAPIClient:
             end_year: Eind jaar
         
         Returns:
-            DataFrame met gefilterde data
+            DataFrame met gefilterte data
         """
         # Map leeftijdsgroepen naar OECD codes
         age_mapping = {
@@ -127,32 +127,22 @@ class OECDAPIClient:
         
         age_code = age_mapping.get(age_group, age_group)
         
-        # Bouw data selection string - volgens SDMX syntax: COU.SEX.AGE
-        data_selection = f"{country}.{gender}.{age_code}"
+        # Gebruik direct lokaal filteren voor betrouwbaarheid
+        # API filters geven vaak 422 errors, dus we gebruiken de fallback methode
+        all_data = self.get_data(
+            start_period=start_year,
+            end_period=end_year,
+            format="csv"
+        )
         
-        try:
-            return self.get_data(
-                data_selection=data_selection,
-                start_period=start_year,
-                end_period=end_year,
-                format="csv"
-            )
-        except Exception as e:
-            print(f"API error met gefilterde query: {e}")
-            print("Poging met alternatieve methode...")
-            # Fallback: haal alle data en filter lokaal
-            all_data = self.get_data(
-                start_period=start_year,
-                end_period=end_year,
-                format="csv"
-            )
-            # Filter lokaal
-            filtered = all_data[
-                (all_data['COU'] == country) & 
-                (all_data['SEX'] == gender) & 
-                (all_data['AGE'] == age_code)
-            ]
-            return filtered
+        # Filter lokaal
+        filtered = all_data[
+            (all_data['COU'] == country) & 
+            (all_data['SEX'] == gender) & 
+            (all_data['AGE'] == age_code)
+        ]
+        
+        return filtered
 
 
 # Voorbeeld gebruik
